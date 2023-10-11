@@ -1,0 +1,107 @@
+# IST - LAB 01 : FILE SYSTEMS
+
+**Farouk Ferchichi & Hugo Huart**
+
+## Task 1 : Explore block devices and filesystems
+
+#### _On which block device is the boot partition mounted? In the /dev directory find the special file corresponding to this block device. With ls -l list its metadata._
+
+En utilisant la commande:
+
+```console
+$ lsblk
+```
+
+On obtient : 
+
+```console
+...
+sda      8:0    0    25G  0 disk 
+├─sda1   8:1    0     1M  0 part 
+├─sda2   8:2    0   513M  0 part /boot/efi
+└─sda3   8:3    0  24.5G  0 part /var/snap/
+                                 /
+...
+```
+
+On constate que `/dev/sda2` contient la partition de boot.
+
+Avec `ls -l /dev/sda2` on obtient:
+
+```console
+brw-rw---- 1 root disk 8, 2 Okt 11 01:39 /dev/sda2
+```
+
+L'attribut `b` indique qu'il s'agit bient d'une `block special file`.
+
+#### _On which block device is the root (/) partition mounted? What is the name of its special file?_
+
+On a pu déjà constater que la partition `/` correspond au _block device_ `/dev/sda3`.
+
+avec : 
+
+```console
+$ file /dev/sda3
+```
+
+on obtient :
+```console
+/dev/sda: block special (8/3)
+```
+
+Il s'agit d'un `block special file`.
+
+#### _With hdparm -t do a timing test on the boot partition. What throughput do you get?_
+
+Avec : 
+
+```console
+$ sudo hdparm -t /dev/sda2
+```
+
+On obtient : 
+
+```console
+/dev/sda2:
+ Timing buffered disk reads: 512 MB in  0.45 seconds = 1148.05 MB/sec
+```
+
+Soit un débit d'environ 1GB par seconde (la machine virtuelle a été installée sur un disque NVMe).
+
+#### _Now open the special file with the same command. You may pipe its output into less. What do you see? If your root partition uses LVM (verify with lsblk), you should see text strings containing volume group configuration information._
+
+Avec :
+
+```console
+$ sudo xxd /dev/sda2 | less
+```
+
+On obtient : 
+
+```console
+00000000: eb58 906d 6b66 732e 6661 7400 0208 2000  .X.mkfs.fat... .
+00000010: 0200 0000 00f8 0000 3f00 ff00 0010 0000  ........?.......
+00000020: dc07 1000 0004 0000 0000 0000 0200 0000  ................
+00000030: 0100 0600 0000 0000 0000 0000 0000 0000  ................
+00000040: 8001 2940 b682 cf4e 4f20 4e41 4d45 2020  ..)@...NO NAME  
+00000050: 2020 4641 5433 3220 2020 0e1f be77 7cac    FAT32   ...w|.
+00000060: 22c0 740b 56b4 0ebb 0700 cd10 5eeb f032  ".t.V.......^..2
+00000070: e4cd 16cd 19eb fe54 6869 7320 6973 206e  .......This is n
+00000080: 6f74 2061 2062 6f6f 7461 626c 6520 6469  ot a bootable di
+00000090: 736b 2e20 2050 6c65 6173 6520 696e 7365  sk.  Please inse
+000000a0: 7274 2061 2062 6f6f 7461 626c 6520 666c  rt a bootable fl
+000000b0: 6f70 7079 2061 6e64 0d0a 7072 6573 7320  oppy and..press 
+000000c0: 616e 7920 6b65 7920 746f 2074 7279 2061  any key to try a
+000000d0: 6761 696e 202e 2e2e 200d 0a00 0000 0000  gain ... .......
+000000e0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+000000f0: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+00000100: 0000 0000 0000 0000 0000 0000 0000 0000  ................
+...
+```
+
+Ce qui montre que la partition de boot est bien formatée en _vfat_ (_FAT32_).
+
+## Task 2 : Prepare and partition disk
+
+#### _List again the block devices. Which new block devices and special files appeared? These represent the disk and its partitions you just attached._
+
